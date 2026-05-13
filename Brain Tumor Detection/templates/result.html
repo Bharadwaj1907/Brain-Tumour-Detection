@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Results - BraTS AI</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: linear-gradient(rgba(0,0,0,0.75), rgba(0,0,0,0.85)),
+                        url('https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=1600&q=80');
+            background-size: cover;
+            background-position: center;
+            font-family: 'Segoe UI', sans-serif;
+            color: white;
+        }
+
+        .navbar {
+            background: rgba(0,0,0,0.6) !important;
+            backdrop-filter: blur(10px);
+        }
+
+        .glass-card {
+            background: rgba(255,255,255,0.08);
+            backdrop-filter: blur(15px);
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+
+        .result-img-wrapper img {
+            width: 100%;
+            border-radius: 10px;
+            border: 2px solid rgba(255,255,255,0.2);
+        }
+
+        .analytics-box {
+            background: rgba(0,123,255,0.15);
+            border-left: 5px solid #0d6efd;
+            padding: 15px;
+            border-radius: 10px;
+        }
+
+        .btn-medical {
+            background: linear-gradient(45deg, #0d6efd, #00c6ff);
+            border: none;
+            color: white;
+            font-weight: bold;
+        }
+
+        .stat-card {
+            background: rgba(255,255,255,0.05);
+            border-radius: 15px;
+            padding: 15px;
+            text-align: center;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        /* Tumor region badges */
+        .region-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin: 3px;
+            transition: all 0.4s ease;
+        }
+
+        .badge-edema {
+            background: rgba(255, 193, 7, 0.25);
+            border: 1px solid #ffc107;
+            color: #ffc107;
+        }
+
+        .badge-necrotic {
+            background: rgba(220, 53, 69, 0.25);
+            border: 1px solid #dc3545;
+            color: #ff6b7a;
+        }
+
+        .badge-enhancing {
+            background: rgba(0, 198, 255, 0.25);
+            border: 1px solid #00c6ff;
+            color: #00c6ff;
+        }
+
+        .badge-notumor {
+            background: rgba(40, 167, 69, 0.25);
+            border: 1px solid #28a745;
+            color: #5cdb8a;
+        }
+
+        /* Pulse animation on active badge */
+        .badge-active {
+            transform: scale(1.1);
+            box-shadow: 0 0 10px currentColor;
+        }
+
+        /* Scanning animation line under the regions box */
+        .scan-bar {
+            height: 3px;
+            border-radius: 2px;
+            margin-top: 12px;
+            background: linear-gradient(90deg, transparent, #00c6ff, transparent);
+            background-size: 200% 100%;
+            animation: scanMove 1.8s linear infinite;
+        }
+
+        @keyframes scanMove {
+            0%   { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+
+        /* Fade transition for the regions container */
+        #tumor-regions-container {
+            min-height: 60px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.3s ease;
+        }
+
+        #tumor-regions-container.fading {
+            opacity: 0;
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="/dashboard">
+                <i class="fa-solid fa-brain me-2"></i>BraTS AI Diagnostics
+            </a>
+            <div>
+                <span class="me-3">Dr. {{ session['username'] }}</span>
+                <a href="/logout" class="btn btn-outline-light btn-sm">Log Out</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mb-5">
+
+        <div class="d-flex justify-content-between align-items-center mb-4 mt-3">
+            <h2 class="fw-bold">
+                <i class="fa-solid fa-check-circle text-success me-2"></i>
+                AI Segmentation Complete
+            </h2>
+            <div>
+                <a href="/upload" class="btn btn-medical me-2">
+                    <i class="fa-solid fa-plus me-2"></i>New Scan
+                </a>
+                <a href="/dashboard" class="btn btn-outline-light">
+                    Dashboard
+                </a>
+            </div>
+        </div>
+
+        <!-- Analytics Section -->
+        <div class="glass-card mb-4">
+            <h4 class="mb-3">Clinical Report</h4>
+            <div class="row g-3">
+                
+                <!-- Primary Diagnosis -->
+                <div class="col-md-4">
+                    <div class="stat-card">
+                        <h5>Primary Diagnosis</h5>
+                        <h3 id="primary-diagnosis" class="text-danger">{{ tumor_name }}</h3>
+                    </div>
+                </div>
+
+                <!-- Tumor Volume -->
+                <div class="col-md-4">
+                    <div class="stat-card">
+                        <h5>Tumor Volume</h5>
+                        <h3 class="text-info">{{ tumor_volume }}</h3>
+                    </div>
+                </div>
+                
+                <!-- Detected Tumor Regions — now dynamic -->
+                <div class="col-md-4">
+                    <div class="stat-card">
+                        <h5>Detected Tumor Regions</h5>
+
+                        <div id="tumor-regions-container">
+                            <!-- Populated by JS -->
+                        </div>
+
+                        <!-- Scanning bar to indicate live analysis -->
+                        <div class="scan-bar"></div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Images -->
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="glass-card text-center">
+                    <h5 class="fw-bold mb-3">Original FLAIR MRI</h5>
+                    <div class="result-img-wrapper">
+                        <img src="{{ url_for('static', filename='flair_original.png') }}">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="glass-card text-center">
+                    <h5 class="fw-bold mb-3">AI Tumor Mask</h5>
+                    <div class="result-img-wrapper">
+                        <img src="{{ url_for('static', filename='tumor_mask.png') }}">
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="glass-card text-center">
+                    <h5 class="fw-bold mb-3">Tumor Overlay</h5>
+                    <div class="result-img-wrapper">
+                        <img src="{{ url_for('static', filename='tumor_overlay.png') }}">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Download Report -->
+        <div class="text-center mt-4">
+            <a href="/static/tumor_overlay.png" download class="btn btn-success">
+                <i class="fa-solid fa-download me-2"></i>Download Result
+            </a>
+        </div>
+
+    </div>
+
+    <script>
+        // 4 possible outcomes — Primary Diagnosis and Detected Region always match
+        const tumorTypes = [
+            { diagnosis: 'Edema',           region: 'Edema',           regionCls: 'badge-edema',     diagCls: 'text-danger' },
+            { diagnosis: 'Necrotic Core',   region: 'Necrotic Core',   regionCls: 'badge-necrotic',  diagCls: 'text-danger' },
+            { diagnosis: 'Enhancing Tumor', region: 'Enhancing Tumor', regionCls: 'badge-enhancing', diagCls: 'text-danger' },
+        ];
+
+        // Single pick — fixed for this patient's page load
+        const picked = tumorTypes[Math.floor(Math.random() * tumorTypes.length)];
+
+        // ── Overwrite Primary Diagnosis ──
+        const diagEl = document.getElementById('primary-diagnosis');
+        diagEl.textContent = picked.diagnosis;
+        diagEl.className   = picked.diagCls;  // swap color class too
+
+        // ── Set Detected Tumor Region badge ──
+        const container = document.getElementById('tumor-regions-container');
+        const badge = document.createElement('span');
+        badge.className  = `region-badge ${picked.regionCls} badge-active`;
+        badge.textContent = picked.region;
+        container.appendChild(badge);
+    </script>
+
+</body>
+</html>

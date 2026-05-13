@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Patient History - BraTS AI</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: linear-gradient(rgba(0,0,0,0.75), rgba(0,0,0,0.85)),
+                        url('https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=1600&q=80');
+            background-size: cover;
+            background-position: center;
+            font-family: 'Segoe UI', sans-serif;
+            color: white;
+        }
+
+        .navbar {
+            background: rgba(0,0,0,0.6) !important;
+            backdrop-filter: blur(10px);
+        }
+
+        .glass-card {
+            background: rgba(255,255,255,0.08);
+            backdrop-filter: blur(15px);
+            border-radius: 20px;
+            padding: 0;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .table {
+            color: white;
+        }
+
+        .badge-volume {
+            background: linear-gradient(45deg, #0d6efd, #00c6ff);
+            padding: 8px 12px;
+            border-radius: 20px;
+        }
+
+        .btn-medical {
+            background: linear-gradient(45deg, #0d6efd, #00c6ff);
+            border: none;
+            color: white;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-dark">
+    <div class="container">
+        <a class="navbar-brand fw-bold" href="/dashboard">
+            <i class="fa-solid fa-brain me-2"></i>BraTS AI Diagnostics
+        </a>
+
+        <div>
+            <span class="me-3">Dr. {{ session['username'] }}</span>
+            <a href="/dashboard" class="btn btn-outline-light btn-sm me-2">Dashboard</a>
+            <a href="/logout" class="btn btn-outline-light btn-sm">Log Out</a>
+        </div>
+    </div>
+</nav>
+
+<div class="container mb-5">
+
+    <div class="d-flex justify-content-between align-items-center mb-4 mt-3">
+        <h2 class="fw-bold">
+            <i class="fa-solid fa-database text-info me-2"></i>
+            MRI Scan History
+        </h2>
+        <div>
+            <a href="/upload" class="btn btn-medical me-2">
+                <i class="fa-solid fa-plus me-2"></i>New Scan
+            </a>
+            <a href="/delete_history" class="btn btn-danger"
+               onclick="return confirm('Are you sure you want to delete all history?');">
+               <i class="fa-solid fa-trash me-2"></i>Delete History
+            </a>
+        </div>
+    </div>
+
+    <div class="glass-card">
+        <table class="table table-hover mb-0">
+            <thead>
+                <tr>
+                    <th class="py-3 px-4">Scan ID</th>
+                    <th class="py-3 px-4">Doctor</th>
+                    <th class="py-3 px-4">Date & Time</th>
+                    <th class="py-3 px-4">Tumor Volume</th>
+                    <th class="py-3 px-4">Detected Regions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in records %}
+                <tr>
+                    <td class="fw-bold px-4">#{{ row[0] }}</td>
+                    <td class="px-4">Dr. {{ row[4] }}</td>
+                    <td class="px-4">{{ row[1] }}</td>
+                    <td class="px-4"><span class="badge-volume">{{ row[2] }}</span></td>
+                    <td class="px-4 text-info">{{ row[3] }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5" class="text-center py-5 text-muted">
+                        No scan history found.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+</body>
+</html>
